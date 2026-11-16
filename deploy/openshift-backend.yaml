@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clinica-alejandra-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: clinica-alejandra-api }
+  template:
+    metadata:
+      labels: { app: clinica-alejandra-api }
+    spec:
+      containers:
+        - name: api
+          image: image-registry.openshift-image-registry.svc:5000/namespace/clinica-alejandra-api:latest
+          ports: [{ containerPort: 3000 }]
+          envFrom:
+            - configMapRef: { name: clinica-alejandra-api-config }
+            - secretRef: { name: clinica-alejandra-api-secret }
+          volumeMounts:
+            - name: mysql-ca
+              mountPath: /etc/mysql-ca
+              readOnly: true
+          readinessProbe: { httpGet: { path: /api/health, port: 3000 }, initialDelaySeconds: 5 }
+          startupProbe: { httpGet: { path: /api/live, port: 3000 }, periodSeconds: 5, failureThreshold: 24 }
+          livenessProbe: { httpGet: { path: /api/live, port: 3000 }, periodSeconds: 10, failureThreshold: 3 }
+          resources: { requests: { cpu: 100m, memory: 128Mi }, limits: { cpu: 500m, memory: 512Mi } }
+      volumes:
+        - name: mysql-ca
+          secret:
+            secretName: clinica-alejandra-db-ca
+            optional: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clinica-alejandra-api
+spec:
+  selector: { app: clinica-alejandra-api }
+  ports: [{ port: 3000, targetPort: 3000 }]
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: clinica-alejandra-api
+spec:
+  to: { kind: Service, name: clinica-alejandra-api }
+  port: { targetPort: 3000 }
+  tls: { termination: edge, insecureEdgeTerminationPolicy: Redirect }
