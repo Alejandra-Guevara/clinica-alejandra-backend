@@ -131,7 +131,7 @@ try {
     await connection.execute('INSERT IGNORE INTO usuario_rol(id_usuario,id_rol) VALUES (?,?)',[u.id_usuario,doctorRole.id_rol]);
     let [[m]]=await connection.execute('SELECT id_medico FROM medicos WHERE id_usuario=?',[u.id_usuario]);
     if(!m) {
-      const [r]=await connection.execute('INSERT INTO medicos(id_usuario,numero_registro_profesional,activo) VALUES (?,?,1)',[u.id_usuario,d.reg]); m={id_medico:r.insertId};
+      const [r]=await connection.execute('INSERT INTO medicos(id_usuario,numero_registro_profesional,activo) VALUES (?,?,1)',[u.id_usuario,d.reg]); m={id_medico:r.insertId}; counts.doctors++;
     } else if(i<3) await connection.execute('UPDATE medicos SET numero_registro_profesional=?,activo=1 WHERE id_medico=?',[d.reg,m.id_medico]);
     await reg(`doctor-${i+1}`,'medicos',m.id_medico); doctorIds.push(m.id_medico);
     const [[s]]=await connection.execute('SELECT id_especialidad FROM especialidades WHERE nombre=?',[d.specialty]);
