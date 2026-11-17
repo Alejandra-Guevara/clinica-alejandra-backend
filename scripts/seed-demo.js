@@ -4,8 +4,8 @@ import { randomBytes } from 'node:crypto';
 import { pool } from '../src/config/db.js';
 
 const database=process.env.DB_NAME||'clinica-alejandra';
-if(database!=='clinica_alejandra_demo') {
-  console.error('Seguridad: db:demo solo puede ejecutarse contra DB_NAME=clinica_alejandra_demo.');
+if(database!=='clinica-alejandra'||process.env.DEMO_SEED_CONFIRM!=='CONFIRM_DEMO_SEED') {
+  console.error('Seguridad: db:demo requiere DB_NAME=clinica-alejandra y DEMO_SEED_CONFIRM=CONFIRM_DEMO_SEED.');
   process.exitCode=1;
   await pool.end();
 } else {
