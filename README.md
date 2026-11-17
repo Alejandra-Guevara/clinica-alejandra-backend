@@ -11,12 +11,22 @@ API REST Express/MySQL for the supplied schema. `DB_NAME` defaults to the existi
 5. `npm run db:roles`; configure `ADMIN_INITIAL_PASSWORD` temporalmente en el entorno de forma segura y ejecute `npm run admin:create -- admin@ejemplo.com Nombre Apellido`. En PowerShell puede solicitarla sin mostrarla: `$env:ADMIN_INITIAL_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host -AsSecureString 'Contraseña inicial')).Password`; al terminar, ejecute `Remove-Item Env:ADMIN_INITIAL_PASSWORD`.
 6. `npm run dev`. Health check: `GET /api/health`.
 
-### Datos de demostración sintéticos
+### Carga de datos sintéticos de demostración
 
-Para la instancia local usa la base existente `clinica-alejandra`; no se crea un segundo servidor ni una segunda base. Solo cargar datos en una instancia que quieras usar como demostración. Configura `DEMO_SEED_CONFIRM=CONFIRM_DEMO_SEED`, ejecuta `npm.cmd run db:roles` y `npm.cmd run db:demo`. La primera ejecución genera y muestra una clave aleatoria para `admin.demo@example.test`; guárdala, porque el script no la revela nuevamente. Los registros de ejemplo usan marcas `DEMO`, correos reservados `.test`/`.invalid` y teléfonos ficticios. La carga es idempotente.
+La aplicación conserva un solo backend Express y una sola base de datos local: `clinica-alejandra`. No se crea una segunda API ni se cambia la contraseña del administrador principal. La carga agrega 15 pacientes, 6 médicos y 24 consultas a MySQL; crea historias, diagnósticos, signos vitales, alergias, antecedentes, recetas y órdenes relacionados. Usa documentos y registros reservados `DEMO-*`, emails `example.com` y teléfonos no operativos. La interfaz muestra un indicador de demostración solo al administrador cuando `VITE_DEMO_MODE=true`.
 
-Sesiones en cookies HttpOnly firmadas, CSRF por cookie/header, rate limit de login, roles en cada solicitud, consultas parametrizadas, restricciones relacionales MySQL, auditoria de lecturas/escrituras y bloqueo de edicion de consulta tras finalizacion. El cambio de clave desde el perfil revoca sesiones anteriores. Las sesiones MySQL usan `-05:00` (Colombia), porque los `DATETIME` del esquema no contienen zona horaria. `DB_SSL=true` habilita TLS con verificacion del certificado (configurable con `DB_SSL_CA`); el servidor exige TLS de base de datos y `FRONTEND_URL` en produccion. No se guardan tokens de sesion en localStorage. Para ejecucion local, use una cuenta MariaDB de minimo privilegio; el `.env` no se publica.
+Primero aplica `npm.cmd run db:migrate` con una cuenta autorizada para migraciones y ejecuta `npm.cmd run db:roles` si hacen falta los roles. Luego, desde PowerShell y únicamente con la base local seleccionada:
 
+```powershell
+$env:DEMO_SEED_CONFIRM = 'CONFIRM_DEMO_SEED'
+npm.cmd run seed:demo
+Remove-Item Env:DEMO_SEED_CONFIRM
+npm.cmd run verify:demo
+```
+
+El cargador requiere `DB_NAME=clinica-alejandra`, host local, confirmación explícita y `NODE_ENV` distinto de `production`. Inserta o actualiza únicamente registros con identificadores reservados del cargador; aborta ante conflictos de la tabla de seguimiento. La segunda ejecución no duplica filas. Las narrativas y prescripciones son sintéticas; no deben usarse para decisiones ni tratamientos clínicos y requieren validación profesional.
+
+Sesiones en cookies HttpOnly firmadas, CSRF por cookie/header, rate limit de login, roles en cada solicitud, consultas parametrizadas, restricciones relacionales MySQL, auditoría de lecturas/escrituras y bloqueo de edición de consulta tras finalización. El cambio de clave desde el perfil revoca sesiones anteriores. Las sesiones MySQL usan `-05:00` (Colombia), porque los `DATETIME` del esquema no contienen zona horaria. `DB_SSL=true` habilita TLS con verificación del certificado (configurable con `DB_SSL_CA`); el servidor exige TLS de base de datos y `FRONTEND_URL` en producción. No se guardan tokens de sesión en localStorage. Para ejecución local, use una cuenta MariaDB de mínimo privilegio; el `.env` no se publica.
 ## API
 
 - `GET /api/auth/csrf`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` y `PATCH /api/auth/password`.
