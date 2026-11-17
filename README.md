@@ -11,6 +11,10 @@ API REST Express/MySQL for the supplied schema. `DB_NAME` defaults to the existi
 5. `npm run db:roles`; configure `ADMIN_INITIAL_PASSWORD` temporalmente en el entorno de forma segura y ejecute `npm run admin:create -- admin@ejemplo.com Nombre Apellido`. En PowerShell puede solicitarla sin mostrarla: `$env:ADMIN_INITIAL_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host -AsSecureString 'Contraseña inicial')).Password`; al terminar, ejecute `Remove-Item Env:ADMIN_INITIAL_PASSWORD`.
 6. `npm run dev`. Health check: `GET /api/health`.
 
+### Datos de demostración sintéticos
+
+En local se preparó la base separada `clinica_alejandra_demo`; no contiene copias de pacientes reales. El script `npm run db:demo` solo funciona cuando `DB_NAME` coincide exactamente con ese nombre. Primero importa el SQL del proyecto en una base vacía con ese nombre y ejecuta `npm.cmd run db:migrate`; después ejecuta `npm.cmd run db:roles` y `npm.cmd run db:demo`. La primera ejecución genera y muestra una clave aleatoria para `admin.demo@example.test`; guárdala, porque el script no la revela nuevamente. Los registros de ejemplo usan marcas `DEMO`, correos reservados `.test`/`.invalid` y teléfonos ficticios. La carga es idempotente y no debe usarse con datos clínicos reales.
+
 Sesiones en cookies HttpOnly firmadas, CSRF por cookie/header, rate limit de login, roles en cada solicitud, consultas parametrizadas, restricciones relacionales MySQL, auditoria de lecturas/escrituras y bloqueo de edicion de consulta tras finalizacion. El cambio de clave desde el perfil revoca sesiones anteriores. Las sesiones MySQL usan `-05:00` (Colombia), porque los `DATETIME` del esquema no contienen zona horaria. `DB_SSL=true` habilita TLS con verificacion del certificado (configurable con `DB_SSL_CA`); el servidor exige TLS de base de datos y `FRONTEND_URL` en produccion. No se guardan tokens de sesion en localStorage. Para ejecucion local, use una cuenta MariaDB de minimo privilegio; el `.env` no se publica.
 
 ## API
