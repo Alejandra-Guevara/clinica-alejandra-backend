@@ -21,7 +21,7 @@ app.use(cookieParser());
 app.use((req,_res,next)=>{console.log(JSON.stringify({level:'info',method:req.method,path:req.path,ip:req.ip,time:new Date().toISOString()}));next();});
 app.use('/api',(req,res,next)=>req.method==='DELETE'?res.status(405).json({error:{code:'DELETE_DISABLED',message:'La eliminación de registros está deshabilitada'}}):next());
 app.get('/api/live',(_req,res)=>res.json({data:{status:'ok'}}));
-app.get('/api/health',async(_req,res)=>{try{const db=await checkDatabase();res.json({data:{status:'ok',database:db.database_name}});}catch{res.status(503).json({error:{code:'DATABASE_UNAVAILABLE',message:'Base de datos no disponible'}});}});
+app.get('/api/health',async(_req,res)=>{try{const db=await checkDatabase();res.json({data:{status:'ok',database:db.database_name}});}catch(error){const code=/^[A-Z0-9_]+$/.test(error.code||'')?error.code:'DATABASE_ERROR';console.error(JSON.stringify({level:'error',message:'Database health check failed',code,time:new Date().toISOString()}));res.status(503).json({error:{code:'DATABASE_UNAVAILABLE',message:'Base de datos no disponible'}});}});
 app.use('/api/auth/login',rateLimit({windowMs:15*60*1000,limit:10,standardHeaders:true,legacyHeaders:false}));
 app.use('/api/auth',authRoutes);
 app.use('/api/dashboard',dashboardRoutes);
