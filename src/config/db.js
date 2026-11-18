@@ -1,16 +1,19 @@
 import mysql from 'mysql2/promise';
 import { readFileSync } from 'node:fs';
+import { runtimeConfig } from './runtime.js';
 
-const ssl = process.env.DB_SSL === 'true'
-  ? { rejectUnauthorized: true, ...(process.env.DB_SSL_CA ? { ca: readFileSync(process.env.DB_SSL_CA, 'utf8') } : {}) }
+const database=runtimeConfig.database;
+const ssl = database.ssl
+  ? { rejectUnauthorized: true, ...(database.caFile ? { ca: readFileSync(database.caFile, 'utf8') } : {}) }
   : undefined;
 
 export const pool = mysql.createPool({
-  host: process.env.DB_HOST || '127.0.0.1',
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'clinica-alejandra',
+  host: database.host,
+  port: database.port,
+  user: database.user,
+  password: database.password,
+  database: database.database,
+  connectTimeout: 5000,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

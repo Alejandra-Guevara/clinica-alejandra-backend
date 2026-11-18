@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
+import { runtimeConfig } from '../config/runtime.js';
 
 const cookieName = 'ca_session';
 const csrfName = 'ca_csrf';
-const secret = () => process.env.SESSION_SECRET || '';
+const secret = () => runtimeConfig.sessionSecret;
 const sign = (value) => crypto.createHmac('sha256', secret()).update(value).digest('base64url');
 
 export function issueSession(userId,sessionVersion=0) {
@@ -24,13 +25,13 @@ export function readSession(value) {
 }
 
 export const setSessionCookie = (res, value) => res.cookie(cookieName, value, {
-  httpOnly: true, secure: process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',
+  httpOnly: true, secure: runtimeConfig.secureCookies,
   sameSite: 'lax', path: '/', maxAge: 8 * 60 * 60 * 1000,
 });
-export const clearSessionCookie = (res) => res.clearCookie(cookieName, { httpOnly: true, sameSite: 'lax', secure: process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production', path: '/' });
+export const clearSessionCookie = (res) => res.clearCookie(cookieName, { httpOnly: true, sameSite: 'lax', secure: runtimeConfig.secureCookies, path: '/' });
 export const setCsrfCookie = (res, value) => res.cookie(csrfName, value, {
-  httpOnly: false, secure: process.env.COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production',
+  httpOnly: false, secure: runtimeConfig.secureCookies,
   sameSite: 'lax', path: '/', maxAge: 8 * 60 * 60 * 1000,
 });
-export const clearCsrfCookie = (res) => res.clearCookie(csrfName, { sameSite: 'lax', path: '/' });
+export const clearCsrfCookie = (res) => res.clearCookie(csrfName, { sameSite: 'lax', secure: runtimeConfig.secureCookies, path: '/' });
 export const cookies = { session: cookieName, csrf: csrfName };

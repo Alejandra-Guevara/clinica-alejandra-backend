@@ -10,12 +10,13 @@ import patientRecordRoutes from './routes/patient-record.js';
 import clinicalCompositionRoutes from './routes/clinical-compositions.js';
 import { errorHandler, notFound } from './middlewares/errors.js';
 import { checkDatabase } from './config/db.js';
+import { runtimeConfig } from './config/runtime.js';
 
 const app=express();
-if(Number(process.env.TRUST_PROXY)>0) app.set('trust proxy',Number(process.env.TRUST_PROXY));
+if(runtimeConfig.trustProxy>0) app.set('trust proxy',runtimeConfig.trustProxy);
 app.disable('x-powered-by');
 app.use(helmet());
-app.use(cors({origin:process.env.FRONTEND_URL||'http://localhost:5173',credentials:true}));
+app.use(cors({origin:runtimeConfig.frontendOrigins,credentials:true}));
 app.use(express.json({limit:'1mb'}));
 app.use(cookieParser());
 app.use((req,_res,next)=>{console.log(JSON.stringify({level:'info',method:req.method,path:req.path,ip:req.ip,time:new Date().toISOString()}));next();});

@@ -1,13 +1,11 @@
-# Backend de Red Hat
+# Backend de demostración con configuración integrada
 
-El manifiesto `openshift-backend.yaml` actualiza el servicio Knative existente `clinica-alejandra-backend-git` en `maria-guevara-rio-dev`. No crea otro Deployment de API.
+La configuración universitaria está en `src/config/demo.js`: MySQL interno, nombre de esquema, cuenta de demostración y URL del frontend. No se necesitan SESSION_SECRET, DB_SSL, FRONTEND_URL ni credenciales mediante variables de OpenShift. La clave de firma se genera en memoria; tras un reinicio hay que iniciar sesión nuevamente. El puerto lo suministra OpenShift automáticamente.
 
-Usa el Secret `clinica-alejandra-backend-secret` con `SESSION_SECRET`, `DB_USER` y `DB_PASSWORD`. Las demás variables se toman de `clinica-alejandra-api-config`. El Secret se prepara en la consola y no se publica en GitHub. Verifica DB_NAME y que MySQL ofrezca TLS; la contraseña de MySQL es independiente de la cuenta del administrador de la aplicación.
+El usuario y la contraseña proporcionados se incorporaron por petición expresa. Son visibles en GitHub y solo corresponden a una demostración. La cuenta debe existir también en MySQL: el login del administrador de la aplicación y el usuario de MySQL son cuentas independientes. No se crea ni cambia ninguna cuenta automáticamente.
 
-La URL del frontend está declarada de antemano en la Route del frontend y en `FRONTEND_URL`. El puerto 8080 se publica en el contenedor; Knative inyecta `PORT` con ese valor. Las sondas HTTP diferencian el estado de Express del estado de MySQL.
+El manifiesto reutiliza `clinica-alejandra-backend-git` y retira todas las referencias a Secrets y ConfigMaps. Las sondas `/api/live` y `/api/health` distinguen el proceso de la conexión a MySQL; el fallo de la base no reinicia Node. No se modifica el resto de permisos o autenticación.
 
-El arranque informa todas las variables obligatorias faltantes en un solo mensaje. La sonda de base de datos registra únicamente el código del error de conexión, sin credenciales ni sentencias SQL. `DB_SSL=true` sigue siendo obligatorio en producción; si se necesita una CA privada, monta `ca.pem` con el Secret opcional `clinica-alejandra-db-ca` y configura `DB_SSL_CA=/etc/mysql-ca/ca.pem`.
+Para aplicar el YAML y reconstruir ambos repositorios usa el [script e instrucciones del frontend](https://github.com/Alejandra-Guevara/clinica-alejandra-frontend/blob/main/deploy/README.md). El script también limpia las variables antiguas del servicio real. Un push a GitHub no aplica el YAML automáticamente.
 
-Para aplicar y reconstruir ambos repositorios, usa el [procedimiento completo del frontend](https://github.com/Alejandra-Guevara/clinica-alejandra-frontend/blob/main/deploy/README.md). El script conserva una sola API, actualiza su imagen por digest y conecta el proxy del frontend con la revisión lista. El YAML completo está en `deploy/redhat-completo.yaml` del repositorio frontend.
-
-El despliegue no crea ni importa tablas, no ejecuta el seed y no modifica contraseñas. Para una base recién importada, aplica las migraciones manualmente con una cuenta autorizada para DDL antes de usar los módulos clínicos. El cargador demo existente conserva su restricción de ejecución local.
+Las utilidades locales mantienen sus opciones de conexión .env para no modificar la base local ni las pruebas aisladas. En OpenShift se ignoran esas opciones: se usa exclusivamente el archivo de configuración integrado. El despliegue no importa tablas ni ejecuta la carga de datos local.

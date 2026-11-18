@@ -5,7 +5,7 @@ API REST Express/MySQL for the supplied schema. `DB_NAME` defaults to the existi
 ## Desarrollo local
 
 1. Install Node.js 22 and run `npm install`.
-2. Copie `.env.example` a `.env` y configure una base que ya exista, además de `SESSION_SECRET` (32 caracteres aleatorios o más).
+2. La configuración de demostración está integrada; las utilidades locales pueden usar .env de forma opcional para la base local.
 3. Set `DB_NAME` to the database that already exists. For local XAMPP, create a dedicated account restricted to localhost and grant only SELECT, INSERT, UPDATE and DELETE on `clinica-alejandra`.*. The supplied SQL includes `CREATE DATABASE IF NOT EXISTS historias_clinicas`; do not import it over an existing clinical database. Import it only into a deliberately selected empty or disposable schema.
 4. Manual y necesario para funciones clinicas nuevas: `npm.cmd run db:migrate` aplica migraciones idempotentes. La 001 agrega anulacion y adendas; la 002 crea asignaciones historia-medico; la 003 incorpora `session_version` para revocar sesiones tras cambiar la clave; la 004 elimina la tabla heredada de tokens de recuperacion. No se eliminan datos clinicos.
 5. `npm run db:roles`; configure `ADMIN_INITIAL_PASSWORD` temporalmente en el entorno de forma segura y ejecute `npm run admin:create -- admin@ejemplo.com Nombre Apellido`. En PowerShell puede solicitarla sin mostrarla: `$env:ADMIN_INITIAL_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host -AsSecureString 'Contraseña inicial')).Password`; al terminar, ejecute `Remove-Item Env:ADMIN_INITIAL_PASSWORD`.
@@ -26,7 +26,8 @@ npm.cmd run verify:demo
 
 El cargador requiere `DB_NAME=clinica-alejandra`, host local, confirmación explícita y `NODE_ENV` distinto de `production`. Inserta o actualiza únicamente registros con identificadores reservados del cargador; aborta ante conflictos de la tabla de seguimiento. La segunda ejecución no duplica filas. Las narrativas y prescripciones son sintéticas; no deben usarse para decisiones ni tratamientos clínicos y requieren validación profesional.
 
-Sesiones en cookies HttpOnly firmadas, CSRF por cookie/header, rate limit de login, roles en cada solicitud, consultas parametrizadas, restricciones relacionales MySQL, auditoría de lecturas/escrituras y bloqueo de edición de consulta tras finalización. El cambio de clave desde el perfil revoca sesiones anteriores. Las sesiones MySQL usan `-05:00` (Colombia), porque los `DATETIME` del esquema no contienen zona horaria. `DB_SSL=true` habilita TLS con verificación del certificado (configurable con `DB_SSL_CA`); el servidor exige TLS de base de datos y `FRONTEND_URL` en producción. No se guardan tokens de sesión en localStorage. Para ejecución local, use una cuenta MariaDB de mínimo privilegio; el `.env` no se publica.
+Sesiones firmadas en cookies HttpOnly, CSRF y permisos se conservan. La configuración de la demostración de Red Hat está integrada; consulta el apartado OpenShift. Las opciones .env de conexión solo se conservan para utilidades locales y pruebas aisladas.
+
 ## API
 
 - `GET /api/auth/csrf`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` y `PATCH /api/auth/password`.
@@ -68,9 +69,11 @@ $secureDbPassword.Dispose()
 No ejecute el runner contra la base activa aunque su nombre termine en `_test`. Al terminar, elimine manualmente solo el esquema desechable despues de verificar su nombre. `npm test` ejecuta las pruebas unitarias y omite la integracion opt-in.
 ## OpenShift
 
-La configuración vigente reutiliza el servicio Knative `clinica-alejandra-backend-git` en el proyecto `maria-guevara-rio-dev`. Consulta [deploy/README.md](deploy/README.md) y el [procedimiento completo de frontend y backend](https://github.com/Alejandra-Guevara/clinica-alejandra-frontend/blob/main/deploy/README.md). El YAML incluye construcción desde GitHub, variables de entorno, referencia al Secret existente, sondas y la URL fija del frontend; no crea un segundo backend.
+La demostración universitaria lleva su configuración integrada en `src/config/demo.js`: host y esquema MySQL, cuenta proporcionada por la propietaria y URL del frontend. No necesita Secrets ni variables de entorno manuales. La clave de sesión se genera en memoria; después de reiniciar el backend hay que ingresar nuevamente. Solo se utilizan el puerto y las señales de clúster que OpenShift proporciona automáticamente.
 
-Se requiere el Secret `clinica-alejandra-backend-secret` con SESSION_SECRET, DB_USER y DB_PASSWORD, y un MySQL accesible con TLS. Confirma el DB_NAME real. `/api/live` comprueba Express; `/api/health` comprueba también la conexión con MySQL. El despliegue no importa datos ni ejecuta migraciones automáticamente. La falta de configuración se informa en conjunto y los errores de conexión se registran por código sin publicar credenciales.
+La cuenta de demostración queda publicada en el código por petición expresa. Debe existir también en MySQL y tener permisos sobre el esquema; incluirla en JavaScript no crea usuarios de MySQL. No se alteran las credenciales del administrador de la aplicación. Esta configuración no está destinada a datos ni servicios reales.
+
+Consulta [deploy/README.md](deploy/README.md) y el [procedimiento conjunto](https://github.com/Alejandra-Guevara/clinica-alejandra-frontend/blob/main/deploy/README.md). El script aplica el YAML al clúster y limpia las referencias antiguas a Secrets/env. Un push o importar desde Git por sí solos no aplican el YAML.
 ## Límites antes de producción
 
 La conexión y el flujo CRUD se probaron en una instancia desechable MySQL Community 8.4.13 importando el SQL suministrado, y la interfaz se recorrió conectada a esa API. La API se verificó contra XAMPP `clinica-alejandra`: migraciones aditivas 001/002/003, health, CSRF y rechazo de credenciales inexistentes. No se importó el SQL ni se borraron o actualizaron filas clínica del usuario. Antes del uso real, endurezca la cuenta root local de XAMPP, configure TLS y revise host/credenciales; revise compatibilidad con `CHECK`, retención, respaldo cifrado, HTTPS, CSRF/orígenes permitidos y auditoría inmutable. Esta implementación no certifica cumplimiento de normativa colombiana ni reemplaza revisión legal/seguridad clínica.
@@ -92,4 +95,4 @@ Defina con la clinica el calendario, retencion, responsables, RPO/RTO y custodia
 
 ## GitHub
 
-Backend: https://github.com/Alejandra-Guevara/clinica-alejandra-backend. Frontend: https://github.com/Alejandra-Guevara/clinica-alejandra-frontend. Los archivos .env y las credenciales no se publican.
+Backend: https://github.com/Alejandra-Guevara/clinica-alejandra-backend. Frontend: https://github.com/Alejandra-Guevara/clinica-alejandra-frontend. La configuración de demostración integra credenciales públicas por petición de la propietaria; no reutilizarlas fuera del proyecto.
